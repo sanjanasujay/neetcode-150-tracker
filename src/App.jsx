@@ -483,6 +483,14 @@ export default function NeetCodeRevisionTracker() {
     setTodaySet(generateSet(progress, nextFilters));
   }
 
+  const filteredProblems = useMemo(() => {
+    return PROBLEMS.filter((p) => {
+      const categoryMatch = filters.category === "all" || p.category === filters.category;
+      const difficultyMatch = filters.difficulty === "all" || p.difficulty === filters.difficulty;
+      return categoryMatch && difficultyMatch;
+    });
+  }, [filters]);
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 text-slate-950">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -503,6 +511,50 @@ export default function NeetCodeRevisionTracker() {
             </Button>
           </div>
         </header>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold">Today&apos;s random set</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {todaySet.map((problem) => {
+              const item = progress.problems[problem.id] ?? { revisionCount: 0, history: [], lastRevisedAt: null, nextDueAt: null };
+              const nextAttempt = Math.min(item.revisionCount + 1, MAX_REVISIONS);
+              const isDone = item.revisionCount >= MAX_REVISIONS;
+              const link = `https://leetcode.com/problems/${problem.slug}/`;
+
+              return (
+                <Card key={problem.id} className="rounded-3xl shadow-sm">
+                  <CardContent className="flex h-full flex-col gap-4 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          <Badge variant="secondary" className="rounded-full">{problem.category}</Badge>
+                          <Badge className="rounded-full">{problem.difficulty}</Badge>
+                        </div>
+                        <h3 className="text-lg font-bold leading-tight">{problem.title}</h3>
+                      </div>
+                      <Badge className="rounded-full">Revision {isDone ? 3 : nextAttempt}/3</Badge>
+                    </div>
+
+                    <div className="space-y-2 rounded-2xl bg-slate-100 p-3 text-sm text-slate-600">
+                      <div className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> Last revised: {formatDateTime(item.lastRevisedAt)}</div>
+                      <div className="flex items-center gap-2"><TimerReset className="h-4 w-4" /> Next due: {isDone ? "Complete" : formatDate(item.nextDueAt)}</div>
+                    </div>
+
+                    <div className="mt-auto flex flex-col gap-2">
+                      <a href={link} target="_blank" rel="noreferrer">
+                        <Button variant="outline" className="w-full rounded-2xl">Open LeetCode <ExternalLink className="ml-2 h-4 w-4" /></Button>
+                      </a>
+                      <Button onClick={() => markRevised(problem.id)} disabled={isDone} className="w-full rounded-2xl">
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        {isDone ? "Completed 3 revisions" : `Mark revision ${nextAttempt} done`}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
 
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="rounded-3xl shadow-sm md:col-span-2">
@@ -564,51 +616,7 @@ export default function NeetCodeRevisionTracker() {
         </Card>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold">Today&apos;s random set</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {todaySet.map((problem) => {
-              const item = progress.problems[problem.id] ?? { revisionCount: 0, history: [], lastRevisedAt: null, nextDueAt: null };
-              const nextAttempt = Math.min(item.revisionCount + 1, MAX_REVISIONS);
-              const isDone = item.revisionCount >= MAX_REVISIONS;
-              const link = `https://leetcode.com/problems/${problem.slug}/`;
-
-              return (
-                <Card key={problem.id} className="rounded-3xl shadow-sm">
-                  <CardContent className="flex h-full flex-col gap-4 p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="mb-3 flex flex-wrap gap-2">
-                          <Badge variant="secondary" className="rounded-full">{problem.category}</Badge>
-                          <Badge className="rounded-full">{problem.difficulty}</Badge>
-                        </div>
-                        <h3 className="text-lg font-bold leading-tight">{problem.title}</h3>
-                      </div>
-                      <Badge className="rounded-full">Revision {isDone ? 3 : nextAttempt}/3</Badge>
-                    </div>
-
-                    <div className="space-y-2 rounded-2xl bg-slate-100 p-3 text-sm text-slate-600">
-                      <div className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> Last revised: {formatDateTime(item.lastRevisedAt)}</div>
-                      <div className="flex items-center gap-2"><TimerReset className="h-4 w-4" /> Next due: {isDone ? "Complete" : formatDate(item.nextDueAt)}</div>
-                    </div>
-
-                    <div className="mt-auto flex flex-col gap-2">
-                      <a href={link} target="_blank" rel="noreferrer">
-                        <Button variant="outline" className="w-full rounded-2xl">Open LeetCode <ExternalLink className="ml-2 h-4 w-4" /></Button>
-                      </a>
-                      <Button onClick={() => markRevised(problem.id)} disabled={isDone} className="w-full rounded-2xl">
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        {isDone ? "Completed 3 revisions" : `Mark revision ${nextAttempt} done`}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-xl font-semibold">All 150 problems</h2>
+          <h2 className="mb-3 text-xl font-semibold">All {filteredProblems.length} problems</h2>
           <div className="overflow-hidden rounded-3xl bg-white shadow-sm">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-100 text-slate-600">
@@ -624,7 +632,7 @@ export default function NeetCodeRevisionTracker() {
                 </tr>
               </thead>
               <tbody>
-                {PROBLEMS.map((problem) => {
+                {filteredProblems.map((problem) => {
                   const item = progress.problems[problem.id] ?? { revisionCount: 0, history: [], lastRevisedAt: null, nextDueAt: null };
                   return (
                     <tr key={problem.id} className="border-t border-slate-100">
