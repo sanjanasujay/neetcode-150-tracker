@@ -470,17 +470,15 @@ export default function NeetCodeRevisionTracker() {
   function resetAll() {
     const fresh = emptyProgress();
     setProgress(fresh);
-    setTodaySet(generateSet(fresh, filters));
+    setTodaySet(generateSet(fresh));
   }
 
   function regenerate() {
-    setTodaySet(generateSet(progress, filters));
+    setTodaySet(generateSet(progress));
   }
 
   function updateFilter(key, value) {
-    const nextFilters = { ...filters, [key]: value };
-    setFilters(nextFilters);
-    setTodaySet(generateSet(progress, nextFilters));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   }
 
   const filteredProblems = useMemo(() => {
