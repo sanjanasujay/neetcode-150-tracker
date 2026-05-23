@@ -1,10 +1,70 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RotateCcw, CheckCircle2, ExternalLink, CalendarClock, Sparkles, Flame, TimerReset } from "lucide-react";
+import * as RadixSelect from "@radix-ui/react-select";
+import { RotateCcw, CheckCircle2, ExternalLink, CalendarClock, Sparkles, Flame, TimerReset, ChevronDown, Check } from "lucide-react";
+
+function Card({ className = "", children }) {
+  return <div className={`bg-white ${className}`}>{children}</div>;
+}
+function CardContent({ className = "", children }) {
+  return <div className={className}>{children}</div>;
+}
+function Button({ onClick, disabled, variant, className = "", children }) {
+  const base = "inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none";
+  const styles = variant === "outline"
+    ? "border border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+    : "bg-slate-900 text-white hover:bg-slate-700";
+  return <button onClick={onClick} disabled={disabled} className={`${base} ${styles} ${className}`}>{children}</button>;
+}
+function Badge({ variant, className = "", children }) {
+  const styles = variant === "outline"
+    ? "border border-slate-200 text-slate-700"
+    : variant === "secondary"
+    ? "bg-slate-100 text-slate-700"
+    : "bg-slate-900 text-white";
+  return <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium ${styles} ${className}`}>{children}</span>;
+}
+function Progress({ value = 0, className = "" }) {
+  return (
+    <div className={`w-full bg-slate-200 rounded-full overflow-hidden ${className}`}>
+      <div className="bg-slate-900 h-full transition-all" style={{ width: `${value}%` }} />
+    </div>
+  );
+}
+function Select({ value, onValueChange, children }) {
+  return (
+    <RadixSelect.Root value={value} onValueChange={onValueChange}>
+      {children}
+    </RadixSelect.Root>
+  );
+}
+function SelectTrigger({ className = "", children }) {
+  return (
+    <RadixSelect.Trigger className={`inline-flex items-center justify-between w-full px-3 py-2 text-sm border border-slate-200 bg-white focus:outline-none ${className}`}>
+      {children}
+      <RadixSelect.Icon><ChevronDown className="h-4 w-4 opacity-50" /></RadixSelect.Icon>
+    </RadixSelect.Trigger>
+  );
+}
+function SelectValue() {
+  return <RadixSelect.Value />;
+}
+function SelectContent({ children }) {
+  return (
+    <RadixSelect.Portal>
+      <RadixSelect.Content className="z-50 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+        <RadixSelect.Viewport className="p-1">{children}</RadixSelect.Viewport>
+      </RadixSelect.Content>
+    </RadixSelect.Portal>
+  );
+}
+function SelectItem({ value, children }) {
+  return (
+    <RadixSelect.Item value={value} className="relative flex items-center px-8 py-2 text-sm cursor-pointer hover:bg-slate-100 focus:bg-slate-100 outline-none rounded-lg">
+      <RadixSelect.ItemIndicator className="absolute left-2"><Check className="h-4 w-4" /></RadixSelect.ItemIndicator>
+      <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
+    </RadixSelect.Item>
+  );
+}
 
 const STORAGE_KEY = "neetcode-150-revision-tracker-v2";
 const MAX_REVISIONS = 3;
