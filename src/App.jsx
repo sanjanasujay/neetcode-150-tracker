@@ -1,122 +1,591 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useEffect, useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RotateCcw, CheckCircle2, ExternalLink, CalendarClock, Sparkles, Flame, TimerReset } from "lucide-react";
 
-function App() {
-  const [count, setCount] = useState(0)
+const STORAGE_KEY = "neetcode-150-revision-tracker-v2";
+const MAX_REVISIONS = 3;
+const REVIEW_INTERVAL_DAYS = [0, 3, 7, 14]; // after revision 1 -> 3 days, revision 2 -> 7 days, revision 3 -> complete
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+const rawProblems = [
+  ["Contains Duplicate", "Easy", "Arrays & Hashing"],
+  ["Valid Anagram", "Easy", "Arrays & Hashing"],
+  ["Two Sum", "Easy", "Arrays & Hashing"],
+  ["Group Anagrams", "Medium", "Arrays & Hashing"],
+  ["Top K Frequent Elements", "Medium", "Arrays & Hashing"],
+  ["Product of Array Except Self", "Medium", "Arrays & Hashing"],
+  ["Valid Sudoku", "Medium", "Arrays & Hashing"],
+  ["Encode and Decode Strings", "Medium", "Arrays & Hashing"],
+  ["Longest Consecutive Sequence", "Medium", "Arrays & Hashing"],
 
-      <div className="ticks"></div>
+  ["Valid Palindrome", "Easy", "Two Pointers"],
+  ["Two Sum II - Input Array Is Sorted", "Medium", "Two Pointers"],
+  ["3Sum", "Medium", "Two Pointers"],
+  ["Container With Most Water", "Medium", "Two Pointers"],
+  ["Trapping Rain Water", "Hard", "Two Pointers"],
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  ["Best Time to Buy and Sell Stock", "Easy", "Sliding Window"],
+  ["Longest Substring Without Repeating Characters", "Medium", "Sliding Window"],
+  ["Longest Repeating Character Replacement", "Medium", "Sliding Window"],
+  ["Permutation in String", "Medium", "Sliding Window"],
+  ["Minimum Window Substring", "Hard", "Sliding Window"],
+  ["Sliding Window Maximum", "Hard", "Sliding Window"],
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  ["Valid Parentheses", "Easy", "Stack"],
+  ["Min Stack", "Medium", "Stack"],
+  ["Evaluate Reverse Polish Notation", "Medium", "Stack"],
+  ["Generate Parentheses", "Medium", "Stack"],
+  ["Daily Temperatures", "Medium", "Stack"],
+  ["Car Fleet", "Medium", "Stack"],
+  ["Largest Rectangle in Histogram", "Hard", "Stack"],
+
+  ["Binary Search", "Easy", "Binary Search"],
+  ["Search a 2D Matrix", "Medium", "Binary Search"],
+  ["Koko Eating Bananas", "Medium", "Binary Search"],
+  ["Find Minimum in Rotated Sorted Array", "Medium", "Binary Search"],
+  ["Search in Rotated Sorted Array", "Medium", "Binary Search"],
+  ["Time Based Key-Value Store", "Medium", "Binary Search"],
+  ["Median of Two Sorted Arrays", "Hard", "Binary Search"],
+
+  ["Reverse Linked List", "Easy", "Linked List"],
+  ["Merge Two Sorted Lists", "Easy", "Linked List"],
+  ["Linked List Cycle", "Easy", "Linked List"],
+  ["Reorder List", "Medium", "Linked List"],
+  ["Remove Nth Node From End of List", "Medium", "Linked List"],
+  ["Copy List with Random Pointer", "Medium", "Linked List"],
+  ["Add Two Numbers", "Medium", "Linked List"],
+  ["Find the Duplicate Number", "Medium", "Linked List"],
+  ["LRU Cache", "Medium", "Linked List"],
+  ["Merge k Sorted Lists", "Hard", "Linked List"],
+  ["Reverse Nodes in k-Group", "Hard", "Linked List"],
+
+  ["Invert Binary Tree", "Easy", "Trees"],
+  ["Maximum Depth of Binary Tree", "Easy", "Trees"],
+  ["Diameter of Binary Tree", "Easy", "Trees"],
+  ["Balanced Binary Tree", "Easy", "Trees"],
+  ["Same Tree", "Easy", "Trees"],
+  ["Subtree of Another Tree", "Easy", "Trees"],
+  ["Lowest Common Ancestor of a Binary Search Tree", "Medium", "Trees"],
+  ["Binary Tree Level Order Traversal", "Medium", "Trees"],
+  ["Binary Tree Right Side View", "Medium", "Trees"],
+  ["Count Good Nodes in Binary Tree", "Medium", "Trees"],
+  ["Validate Binary Search Tree", "Medium", "Trees"],
+  ["Kth Smallest Element in a BST", "Medium", "Trees"],
+  ["Construct Binary Tree from Preorder and Inorder Traversal", "Medium", "Trees"],
+  ["Binary Tree Maximum Path Sum", "Hard", "Trees"],
+  ["Serialize and Deserialize Binary Tree", "Hard", "Trees"],
+
+  ["Kth Largest Element in a Stream", "Easy", "Heap / Priority Queue"],
+  ["Last Stone Weight", "Easy", "Heap / Priority Queue"],
+  ["K Closest Points to Origin", "Medium", "Heap / Priority Queue"],
+  ["Kth Largest Element in an Array", "Medium", "Heap / Priority Queue"],
+  ["Task Scheduler", "Medium", "Heap / Priority Queue"],
+  ["Design Twitter", "Medium", "Heap / Priority Queue"],
+  ["Find Median from Data Stream", "Hard", "Heap / Priority Queue"],
+
+  ["Subsets", "Medium", "Backtracking"],
+  ["Combination Sum", "Medium", "Backtracking"],
+  ["Permutations", "Medium", "Backtracking"],
+  ["Subsets II", "Medium", "Backtracking"],
+  ["Combination Sum II", "Medium", "Backtracking"],
+  ["Word Search", "Medium", "Backtracking"],
+  ["Palindrome Partitioning", "Medium", "Backtracking"],
+  ["Letter Combinations of a Phone Number", "Medium", "Backtracking"],
+  ["N-Queens", "Hard", "Backtracking"],
+
+  ["Implement Trie (Prefix Tree)", "Medium", "Tries"],
+  ["Design Add and Search Words Data Structure", "Medium", "Tries"],
+  ["Word Search II", "Hard", "Tries"],
+
+  ["Number of Islands", "Medium", "Graphs"],
+  ["Clone Graph", "Medium", "Graphs"],
+  ["Max Area of Island", "Medium", "Graphs"],
+  ["Pacific Atlantic Water Flow", "Medium", "Graphs"],
+  ["Surrounded Regions", "Medium", "Graphs"],
+  ["Rotting Oranges", "Medium", "Graphs"],
+  ["Walls and Gates", "Medium", "Graphs"],
+  ["Course Schedule", "Medium", "Graphs"],
+  ["Course Schedule II", "Medium", "Graphs"],
+  ["Redundant Connection", "Medium", "Graphs"],
+  ["Number of Connected Components in an Undirected Graph", "Medium", "Graphs"],
+  ["Graph Valid Tree", "Medium", "Graphs"],
+  ["Word Ladder", "Hard", "Graphs"],
+
+  ["Reconstruct Itinerary", "Hard", "Advanced Graphs"],
+  ["Min Cost to Connect All Points", "Medium", "Advanced Graphs"],
+  ["Network Delay Time", "Medium", "Advanced Graphs"],
+  ["Swim in Rising Water", "Hard", "Advanced Graphs"],
+  ["Alien Dictionary", "Hard", "Advanced Graphs"],
+  ["Cheapest Flights Within K Stops", "Medium", "Advanced Graphs"],
+
+  ["Climbing Stairs", "Easy", "1-D Dynamic Programming"],
+  ["Min Cost Climbing Stairs", "Easy", "1-D Dynamic Programming"],
+  ["House Robber", "Medium", "1-D Dynamic Programming"],
+  ["House Robber II", "Medium", "1-D Dynamic Programming"],
+  ["Longest Palindromic Substring", "Medium", "1-D Dynamic Programming"],
+  ["Palindromic Substrings", "Medium", "1-D Dynamic Programming"],
+  ["Decode Ways", "Medium", "1-D Dynamic Programming"],
+  ["Coin Change", "Medium", "1-D Dynamic Programming"],
+  ["Maximum Product Subarray", "Medium", "1-D Dynamic Programming"],
+  ["Word Break", "Medium", "1-D Dynamic Programming"],
+  ["Longest Increasing Subsequence", "Medium", "1-D Dynamic Programming"],
+  ["Partition Equal Subset Sum", "Medium", "1-D Dynamic Programming"],
+
+  ["Unique Paths", "Medium", "2-D Dynamic Programming"],
+  ["Longest Common Subsequence", "Medium", "2-D Dynamic Programming"],
+  ["Best Time to Buy and Sell Stock with Cooldown", "Medium", "2-D Dynamic Programming"],
+  ["Coin Change II", "Medium", "2-D Dynamic Programming"],
+  ["Target Sum", "Medium", "2-D Dynamic Programming"],
+  ["Interleaving String", "Medium", "2-D Dynamic Programming"],
+  ["Longest Increasing Path in a Matrix", "Hard", "2-D Dynamic Programming"],
+  ["Distinct Subsequences", "Hard", "2-D Dynamic Programming"],
+  ["Edit Distance", "Medium", "2-D Dynamic Programming"],
+  ["Burst Balloons", "Hard", "2-D Dynamic Programming"],
+  ["Regular Expression Matching", "Hard", "2-D Dynamic Programming"],
+
+  ["Maximum Subarray", "Medium", "Greedy"],
+  ["Jump Game", "Medium", "Greedy"],
+  ["Jump Game II", "Medium", "Greedy"],
+  ["Gas Station", "Medium", "Greedy"],
+  ["Hand of Straights", "Medium", "Greedy"],
+  ["Merge Triplets to Form Target Triplet", "Medium", "Greedy"],
+  ["Partition Labels", "Medium", "Greedy"],
+  ["Valid Parenthesis String", "Medium", "Greedy"],
+
+  ["Insert Interval", "Medium", "Intervals"],
+  ["Merge Intervals", "Medium", "Intervals"],
+  ["Non-overlapping Intervals", "Medium", "Intervals"],
+  ["Meeting Rooms", "Easy", "Intervals"],
+  ["Meeting Rooms II", "Medium", "Intervals"],
+  ["Minimum Interval to Include Each Query", "Hard", "Intervals"],
+
+  ["Rotate Image", "Medium", "Math & Geometry"],
+  ["Spiral Matrix", "Medium", "Math & Geometry"],
+  ["Set Matrix Zeroes", "Medium", "Math & Geometry"],
+  ["Happy Number", "Easy", "Math & Geometry"],
+  ["Plus One", "Easy", "Math & Geometry"],
+  ["Pow(x, n)", "Medium", "Math & Geometry"],
+  ["Multiply Strings", "Medium", "Math & Geometry"],
+  ["Detect Squares", "Medium", "Math & Geometry"],
+
+  ["Single Number", "Easy", "Bit Manipulation"],
+  ["Number of 1 Bits", "Easy", "Bit Manipulation"],
+  ["Counting Bits", "Easy", "Bit Manipulation"],
+  ["Reverse Bits", "Easy", "Bit Manipulation"],
+  ["Missing Number", "Easy", "Bit Manipulation"],
+  ["Sum of Two Integers", "Medium", "Bit Manipulation"],
+  ["Reverse Integer", "Medium", "Bit Manipulation"],
+];
+
+const slugOverrides = {
+  "3Sum": "3sum",
+  "Encode and Decode Strings": "encode-and-decode-strings",
+  "Two Sum II - Input Array Is Sorted": "two-sum-ii-input-array-is-sorted",
+  "Kth Largest Element in a Stream": "kth-largest-element-in-a-stream",
+  "Implement Trie (Prefix Tree)": "implement-trie-prefix-tree",
+  "Design Add and Search Words Data Structure": "design-add-and-search-words-data-structure",
+  "Number of Connected Components in an Undirected Graph": "number-of-connected-components-in-an-undirected-graph",
+  "Graph Valid Tree": "graph-valid-tree",
+  "Alien Dictionary": "alien-dictionary",
+  "Meeting Rooms": "meeting-rooms",
+  "Meeting Rooms II": "meeting-rooms-ii",
+  "Pow(x, n)": "powx-n",
+  "Number of 1 Bits": "number-of-1-bits",
+};
+
+function slugify(title) {
+  return (slugOverrides[title] ?? title)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-export default App
+const PROBLEMS = rawProblems.map(([title, difficulty, category], index) => ({
+  id: index + 1,
+  title,
+  difficulty,
+  category,
+  tags: [category, difficulty],
+  slug: slugify(title),
+}));
+
+function todayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function emptyProblemProgress() {
+  return Object.fromEntries(
+    PROBLEMS.map((p) => [
+      p.id,
+      {
+        revisionCount: 0,
+        history: [],
+        lastRevisedAt: null,
+        nextDueAt: null,
+      },
+    ])
+  );
+}
+
+function emptyProgress() {
+  return {
+    problems: emptyProblemProgress(),
+    meta: {
+      completionDates: [],
+    },
+  };
+}
+
+function normalizeProgress(stored) {
+  const blank = emptyProgress();
+  if (!stored) return blank;
+
+  if (!stored.problems) {
+    return {
+      problems: { ...blank.problems, ...stored },
+      meta: blank.meta,
+    };
+  }
+
+  return {
+    problems: { ...blank.problems, ...stored.problems },
+    meta: {
+      ...blank.meta,
+      ...stored.meta,
+      completionDates: Array.from(new Set(stored.meta?.completionDates ?? [])),
+    },
+  };
+}
+
+function loadProgress() {
+  try {
+    return normalizeProgress(JSON.parse(localStorage.getItem(STORAGE_KEY)));
+  } catch {
+    return emptyProgress();
+  }
+}
+
+function formatDateTime(value) {
+  if (!value) return "Not revised yet";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formatDate(value) {
+  if (!value) return "Available now";
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+}
+
+function pickRandom(items, count) {
+  return [...items].sort(() => Math.random() - 0.5).slice(0, count);
+}
+
+function isDue(item) {
+  if (!item || item.revisionCount === 0) return false;
+  if (item.revisionCount >= MAX_REVISIONS) return false;
+  if (!item.nextDueAt) return true;
+  return new Date(item.nextDueAt) <= new Date();
+}
+
+function generateSet(progress, filters = { category: "all", difficulty: "all" }) {
+  const problemProgress = progress.problems;
+  const pool = PROBLEMS.filter((p) => {
+    const categoryMatch = filters.category === "all" || p.category === filters.category;
+    const difficultyMatch = filters.difficulty === "all" || p.difficulty === filters.difficulty;
+    return categoryMatch && difficultyMatch;
+  });
+
+  const newProblems = pool.filter((p) => problemProgress[p.id]?.revisionCount === 0);
+  const dueOldProblems = pool.filter((p) => isDue(problemProgress[p.id]));
+  const anyOldProblems = pool.filter((p) => {
+    const count = problemProgress[p.id]?.revisionCount ?? 0;
+    return count > 0 && count < MAX_REVISIONS;
+  });
+
+  const selectedNew = pickRandom(newProblems, 2);
+  const selectedOld = pickRandom(dueOldProblems.length ? dueOldProblems : anyOldProblems, 1);
+
+  const used = new Set([...selectedNew, ...selectedOld].map((p) => p.id));
+  const fallback = pickRandom(pool.filter((p) => !used.has(p.id) && (problemProgress[p.id]?.revisionCount ?? 0) < MAX_REVISIONS), 3 - used.size);
+
+  return [...selectedNew, ...selectedOld, ...fallback];
+}
+
+function calculateStreak(completionDates) {
+  const dates = new Set(completionDates);
+  let streak = 0;
+  let cursor = new Date();
+
+  while (dates.has(todayKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  if (streak === 0) {
+    cursor.setDate(cursor.getDate() - 1);
+    while (dates.has(todayKey(cursor))) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+  }
+
+  return streak;
+}
+
+export default function NeetCodeRevisionTracker() {
+  const [progress, setProgress] = useState(loadProgress);
+  const [filters, setFilters] = useState({ category: "all", difficulty: "all" });
+  const [todaySet, setTodaySet] = useState(() => generateSet(loadProgress()));
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  }, [progress]);
+
+  const categories = useMemo(() => ["all", ...Array.from(new Set(PROBLEMS.map((p) => p.category)))], []);
+  const difficulties = ["all", "Easy", "Medium", "Hard"];
+
+  const stats = useMemo(() => {
+    const totalSlots = PROBLEMS.length * MAX_REVISIONS;
+    const completedSlots = PROBLEMS.reduce((sum, p) => sum + Math.min(progress.problems[p.id]?.revisionCount ?? 0, MAX_REVISIONS), 0);
+    const fullyDone = PROBLEMS.filter((p) => (progress.problems[p.id]?.revisionCount ?? 0) >= MAX_REVISIONS).length;
+    const dueCount = PROBLEMS.filter((p) => isDue(progress.problems[p.id])).length;
+    const streak = calculateStreak(progress.meta.completionDates);
+
+    return {
+      completedSlots,
+      totalSlots,
+      fullyDone,
+      dueCount,
+      streak,
+      percentage: Math.round((completedSlots / totalSlots) * 100),
+    };
+  }, [progress]);
+
+  function markRevised(problemId) {
+    setProgress((current) => {
+      const item = current.problems[problemId] ?? { revisionCount: 0, history: [], lastRevisedAt: null, nextDueAt: null };
+      if (item.revisionCount >= MAX_REVISIONS) return current;
+
+      const now = new Date();
+      const nextRevisionCount = item.revisionCount + 1;
+      const nextDueAt = nextRevisionCount >= MAX_REVISIONS ? null : addDays(now, REVIEW_INTERVAL_DAYS[nextRevisionCount]).toISOString();
+      const date = todayKey(now);
+
+      return {
+        problems: {
+          ...current.problems,
+          [problemId]: {
+            revisionCount: nextRevisionCount,
+            lastRevisedAt: now.toISOString(),
+            nextDueAt,
+            history: [
+              ...item.history,
+              {
+                attempt: nextRevisionCount,
+                revisedAt: now.toISOString(),
+                nextDueAt,
+              },
+            ],
+          },
+        },
+        meta: {
+          ...current.meta,
+          completionDates: Array.from(new Set([...(current.meta.completionDates ?? []), date])).sort(),
+        },
+      };
+    });
+  }
+
+  function resetAll() {
+    const fresh = emptyProgress();
+    setProgress(fresh);
+    setTodaySet(generateSet(fresh, filters));
+  }
+
+  function regenerate() {
+    setTodaySet(generateSet(progress, filters));
+  }
+
+  function updateFilter(key, value) {
+    const nextFilters = { ...filters, [key]: value };
+    setFilters(nextFilters);
+    setTodaySet(generateSet(progress, nextFilters));
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-6 text-slate-950">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-500">
+              <Sparkles className="h-4 w-4" /> NeetCode 150 revision system
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">2 new + 1 spaced-review problem</h1>
+            <p className="mt-2 max-w-3xl text-slate-600">
+              Randomly generate problems, revise each one 3 times, track timestamps, maintain a streak, and use due dates for spaced repetition.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={regenerate} className="rounded-2xl">Generate random set</Button>
+            <Button variant="outline" onClick={resetAll} className="rounded-2xl">
+              <RotateCcw className="mr-2 h-4 w-4" /> Reset
+            </Button>
+          </div>
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card className="rounded-3xl shadow-sm md:col-span-2">
+            <CardContent className="p-6">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Overall progress</p>
+                  <p className="text-2xl font-semibold">{stats.completedSlots}/{stats.totalSlots} revisions</p>
+                </div>
+                <Badge className="rounded-full text-sm">{stats.fullyDone}/150 fully done</Badge>
+              </div>
+              <Progress value={stats.percentage} className="h-3" />
+              <p className="mt-2 text-sm text-slate-500">{stats.percentage}% toward completing all 3 rounds.</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl shadow-sm">
+            <CardContent className="flex h-full items-center gap-4 p-6">
+              <Flame className="h-9 w-9" />
+              <div>
+                <p className="text-sm text-slate-500">Current streak</p>
+                <p className="text-2xl font-semibold">{stats.streak} day{stats.streak === 1 ? "" : "s"}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl shadow-sm">
+            <CardContent className="flex h-full items-center gap-4 p-6">
+              <TimerReset className="h-9 w-9" />
+              <div>
+                <p className="text-sm text-slate-500">Due for review</p>
+                <p className="text-2xl font-semibold">{stats.dueCount}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="rounded-3xl shadow-sm">
+          <CardContent className="grid gap-4 p-6 md:grid-cols-2">
+            <div>
+              <p className="mb-2 text-sm font-medium text-slate-600">Category filter</p>
+              <Select value={filters.category} onValueChange={(value) => updateFilter("category", value)}>
+                <SelectTrigger className="rounded-2xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => <SelectItem key={category} value={category}>{category === "all" ? "All categories" : category}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-slate-600">Difficulty filter</p>
+              <Select value={filters.difficulty} onValueChange={(value) => updateFilter("difficulty", value)}>
+                <SelectTrigger className="rounded-2xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {difficulties.map((difficulty) => <SelectItem key={difficulty} value={difficulty}>{difficulty === "all" ? "All difficulties" : difficulty}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold">Today&apos;s random set</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {todaySet.map((problem) => {
+              const item = progress.problems[problem.id] ?? { revisionCount: 0, history: [], lastRevisedAt: null, nextDueAt: null };
+              const nextAttempt = Math.min(item.revisionCount + 1, MAX_REVISIONS);
+              const isDone = item.revisionCount >= MAX_REVISIONS;
+              const link = `https://leetcode.com/problems/${problem.slug}/`;
+
+              return (
+                <Card key={problem.id} className="rounded-3xl shadow-sm">
+                  <CardContent className="flex h-full flex-col gap-4 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          <Badge variant="secondary" className="rounded-full">{problem.category}</Badge>
+                          <Badge className="rounded-full">{problem.difficulty}</Badge>
+                        </div>
+                        <h3 className="text-lg font-bold leading-tight">{problem.title}</h3>
+                      </div>
+                      <Badge className="rounded-full">Revision {isDone ? 3 : nextAttempt}/3</Badge>
+                    </div>
+
+                    <div className="space-y-2 rounded-2xl bg-slate-100 p-3 text-sm text-slate-600">
+                      <div className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> Last revised: {formatDateTime(item.lastRevisedAt)}</div>
+                      <div className="flex items-center gap-2"><TimerReset className="h-4 w-4" /> Next due: {isDone ? "Complete" : formatDate(item.nextDueAt)}</div>
+                    </div>
+
+                    <div className="mt-auto flex flex-col gap-2">
+                      <a href={link} target="_blank" rel="noreferrer">
+                        <Button variant="outline" className="w-full rounded-2xl">Open LeetCode <ExternalLink className="ml-2 h-4 w-4" /></Button>
+                      </a>
+                      <Button onClick={() => markRevised(problem.id)} disabled={isDone} className="w-full rounded-2xl">
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        {isDone ? "Completed 3 revisions" : `Mark revision ${nextAttempt} done`}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold">All 150 problems</h2>
+          <div className="overflow-hidden rounded-3xl bg-white shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-100 text-slate-600">
+                <tr>
+                  <th className="p-4">#</th>
+                  <th className="p-4">Problem</th>
+                  <th className="p-4">Category</th>
+                  <th className="p-4">Difficulty</th>
+                  <th className="p-4">Revision</th>
+                  <th className="p-4">Last revised</th>
+                  <th className="p-4">Next due</th>
+                  <th className="p-4">Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PROBLEMS.map((problem) => {
+                  const item = progress.problems[problem.id] ?? { revisionCount: 0, history: [], lastRevisedAt: null, nextDueAt: null };
+                  return (
+                    <tr key={problem.id} className="border-t border-slate-100">
+                      <td className="p-4 text-slate-500">{problem.id}</td>
+                      <td className="p-4 font-medium">{problem.title}</td>
+                      <td className="p-4 text-slate-600">{problem.category}</td>
+                      <td className="p-4"><Badge variant="outline" className="rounded-full">{problem.difficulty}</Badge></td>
+                      <td className="p-4"><Badge variant={item.revisionCount >= MAX_REVISIONS ? "default" : "secondary"} className="rounded-full">{item.revisionCount}/3</Badge></td>
+                      <td className="p-4 text-slate-600">{formatDateTime(item.lastRevisedAt)}</td>
+                      <td className="p-4 text-slate-600">{item.revisionCount >= MAX_REVISIONS ? "Complete" : formatDate(item.nextDueAt)}</td>
+                      <td className="p-4">
+                        <a className="font-medium text-slate-900 underline" href={`https://leetcode.com/problems/${problem.slug}/`} target="_blank" rel="noreferrer">LeetCode</a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
