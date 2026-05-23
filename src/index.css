@@ -113,3 +113,97 @@ code {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-muted: #f4f4f5;
+  --bg-hover: #f4f4f5;
+  --border: #e4e4e7;
+  --text: #18181b;
+  --text-muted: #71717a;
+  --text-faint: #a1a1aa;
+  --diff-easy-bg: #d1fae5;
+  --diff-easy-text: #065f46;
+  --diff-medium-bg: #fef3c7;
+  --diff-medium-text: #92400e;
+  --diff-hard-bg: #fee2e2;
+  --diff-hard-text: #991b1b;
+  --rev-done-bg: #d1fae5;
+  --rev-done-text: #065f46;
+  --rev-progress-bg: #ede9fe;
+  --rev-progress-text: #5b21b6;
+  --rev-none-bg: #f4f4f5;
+  --rev-none-text: #71717a;
+  --badge-secondary-bg: #ede9fe;
+  --badge-secondary-text: #5b21b6;
+  --stat-orange-bg: #ffedd5;
+  --stat-sky-bg: #e0f2fe;
+  --progress-track: #e4e4e7;
+  --select-bg: #ffffff;
+  --select-hover: #f5f3ff;
+  --link: #7c3aed;
+}
+
+html.dark {
+  --bg: #09090b;
+  --bg-card: #18181b;
+  --bg-muted: #27272a;
+  --bg-hover: #27272a;
+  --border: #3f3f46;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --text-faint: #71717a;
+  --diff-easy-bg: #052e16;
+  --diff-easy-text: #86efac;
+  --diff-medium-bg: #451a03;
+  --diff-medium-text: #fcd34d;
+  --diff-hard-bg: #450a0a;
+  --diff-hard-text: #fca5a5;
+  --rev-done-bg: #052e16;
+  --rev-done-text: #86efac;
+  --rev-progress-bg: #2e1065;
+  --rev-progress-text: #c4b5fd;
+  --rev-none-bg: #27272a;
+  --rev-none-text: #a1a1aa;
+  --badge-secondary-bg: #2e1065;
+  --badge-secondary-text: #c4b5fd;
+  --stat-orange-bg: #431407;
+  --stat-sky-bg: #082f49;
+  --progress-track: #3f3f46;
+  --select-bg: #27272a;
+  --select-hover: #3b0764;
+  --link: #a78bfa;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.app-bg        { background-color: var(--bg); color: var(--text); }
+.card          { background-color: var(--bg-card); border: 1px solid var(--border); }
+.card-muted    { background-color: var(--bg-muted); }
+.t-muted       { color: var(--text-muted); }
+.t-faint       { color: var(--text-faint); }
+.divider       { border-color: var(--border); }
+.select-input  { background-color: var(--select-bg); border: 1px solid var(--border); color: var(--text); }
+.select-item:hover, .select-item:focus { background-color: var(--select-hover); }
+.select-content { background-color: var(--select-bg); border: 1px solid var(--border); }
+
+.diff-easy   { background-color: var(--diff-easy-bg);   color: var(--diff-easy-text); }
+.diff-medium { background-color: var(--diff-medium-bg); color: var(--diff-medium-text); }
+.diff-hard   { background-color: var(--diff-hard-bg);   color: var(--diff-hard-text); }
+
+.rev-done     { background-color: var(--rev-done-bg);     color: var(--rev-done-text); }
+.rev-progress { background-color: var(--rev-progress-bg); color: var(--rev-progress-text); }
+.rev-none     { background-color: var(--rev-none-bg);     color: var(--rev-none-text); }
+
+.badge-secondary { background-color: var(--badge-secondary-bg); color: var(--badge-secondary-text); }
+.stat-orange-icon { background-color: var(--stat-orange-bg); }
+.stat-sky-icon    { background-color: var(--stat-sky-bg); }
+.progress-track   { background-color: var(--progress-track); }
+.link-accent { color: var(--link); }
